@@ -18,16 +18,48 @@ const fakeData = [{
     isSpread:false,//该节点是否展开
     isVisible:true,//是否显示
 
-    id:"节点唯一标识符",
+    id:"1",//节点唯一标识符
     name:"1",   //节点名
-    children:[] //孩子节点
+    children:[{
+        isSpread:false,
+        isVisible:true,
+
+        id:"2",
+        name:"1-1",
+        children:[{
+            isSpread:false,
+            isVisible:true,
+
+            id:"4",
+            name:"1-1-1"
+        },{
+            isSpread:false,
+            isVisible:true,
+
+            id:"5",
+            name:"1-1-2"
+        }]
+    },{
+        isSpread:false,
+        isVisible:true,
+
+        id:"3",
+        name:"1-2"
+    }] //孩子节点
+},{
+    isSpread:false,
+    isVisible:true,
+
+    id:"t2",
+    name:"2"
 }]
 
 class Container extends Component{
     render() {
         return (
-            <div style={{height:"600px"}}>
-                <TreeSelect option={fakeData}/>
+            <div style={{height:"1000px"}}>
+                <div style={{height:"600px"}}></div>
+                <TreeSelect data={fakeData}/>
             </div>
         );
     }
