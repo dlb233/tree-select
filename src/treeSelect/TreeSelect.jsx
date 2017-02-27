@@ -11,23 +11,22 @@
  */
 import React,{Component} from 'react'
 import './TreeSelect.scss'
-import * as jtools from '../common/commonFunc.js'
+import fetch from 'node-fetch'
 
 const recursion = Symbol("recursion");
 const confirmSelect = Symbol("confirmSelect"),
-      resetChosen = Symbol("resetChosen");
+    resetChosen = Symbol("resetChosen");
 
 
 /**
  * 遗留问题
  * 1.目前很多地方是使用forceUpdate强制更新，后期改为immutable结构
  * 2.搜索接口todo...
- * 3.异步请求写成async函数
- * 4.组件可继续拆分
+ * 3.组件可继续拆分
  *
  * 可接受参数
  * @param data 初始数据，树形结构
- * @param asycUrl 异步请求数据url
+ * @param asyncUrl 异步请求数据url
  * */
 class TreeSelect extends Component{
     constructor(props){
@@ -66,14 +65,57 @@ class TreeSelect extends Component{
         })
     }
 
+
+    /**
+     * 切换孩子显示状态/请求异步数据更新
+     * */
+    async toggleChildrenAsync(node){
+        //若设置了异步操作则异步获取数据
+        if(!node.children && this.props.asyncUrl) {
+            let res = await fetch(this.props.asyncUrl);
+            let resultJson = await r1.json();
+            node.children = resultJson.data;
+        }
+
+        //展开或收起工作
+        this.spreadChildren(node);
+        this.forceUpdate();
+    }
+
+    /**
+     * 将异步操作转换为promise，由于项目未引入fetch，使用ajax
+     * */
+    getAsyncPromise=(asyncUrl,node)=>{
+        let promise = new Promise((resolve,reject)=>{
+            ajax.get(asyncUrl).query({parentId:node.id}).exchange((err, res) => {
+                if(err){
+                    reject(err);
+                }else{
+                    resolve(res);
+                }
+            });
+        });
+        return promise;
+    }
+
+    /**
+     * toggle展开状态
+     * */
+    spreadChildren(node){
+        node.isSpread = !node.isSpread;
+        if(!node.isSpread){
+            this.hideAllOffspring(node);
+        }
+    }
+
     /**
      * 切换孩子显示状态
      * */
     toggleChildren=(sub)=>{
         let _this = this;
-        if(!sub.children && this.props.asycUrl){
+        if(!sub.children && this.props.asyncUrl){
             //todo..改造成asyc函数
-            ajax.get(this.props.asycUrl).query({parentId:sub.id}).exchange((err, res) => {
+            ajax.get(this.props.asyncUrl).query({parentId:sub.id}).exchange((err, res) => {
                 sub.children=res.body.data;
                 _this.forceUpdate();
             });
@@ -99,6 +141,10 @@ class TreeSelect extends Component{
             sub.isChosen = false;
             this.toggleAllOffspringChosen(sub,false);
         }
+
+        //刷新父辈状态
+        this.refreshAncestorStatus(sub);
+
         this.forceUpdate();
     }
 
@@ -127,7 +173,7 @@ class TreeSelect extends Component{
      * 递归更新父节点状态
      * */
     [recursion](root,node){
-        let father = this.findNode(root,node.id);//父节点
+        let father = this.findParentNode(root,node.id);//父节点
         if(!father.root){ //到根节点则停止
             this.refreshBranchNodeStatus(father);
             this[recursion](root,father);
@@ -139,16 +185,14 @@ class TreeSelect extends Component{
     /**
      * 寻找当前节点的父节点
      * */
-    findNode=(node,id)=> {
-
+    findParentNode=(node,id)=> {
         if(node.children && node.children.length>0){
             for(let item of node.children){
                 if(item.id===id) return node;
                 if(item.children && node.children.length>0){
-                    let temp = this.findNode(item,id);
+                    let temp = this.findParentNode(item,id);
                     if(temp) return temp;
                 }
-
             }
         }
     }
@@ -212,14 +256,14 @@ class TreeSelect extends Component{
     }
 
     /**
-     * 将所有后代的isSpread和visible改为false
+     * 将所有后代的isSpread改为false,notVisible改为true
      * */
     hideAllOffspring=(sub)=>{
         let _this = this;
         if(sub.children && sub.children.length>0){
             for(let item of sub.children){
                 item.isSpread = false;
-                item.visible = false;
+                item.notVisible = true;
                 _this.hideAllOffspring(item);
             }
         }
@@ -242,16 +286,16 @@ class TreeSelect extends Component{
                     <li data-desc={sub.desc} key={i}
                         onClick={(e)=>{this.leftSelected(e.target,sub,father)}}
                         data-value={_subs} data-id={sub.id}
-                        className={klass}>
+                        className={klass+(sub.notVisible?" hide":"")} >
                         <label>{sub.name}</label>
                     </li>
                 );
             }
 
-            return <li className="has-children" key={i} data-desc={sub.desc} data-value={_subs} data-id={sub.id}>
+            return <li className={"has-children"+(sub.notVisible?" hide":"")} key={i} data-desc={sub.desc} data-value={_subs} data-id={sub.id}>
                 <input type="checkbox" name="group" id={sub.id}/>
                 <span className={"spread"+(sub.isSpread?" treeSelect_minas":" treeSelect_plus")}
-                      onClick={(e)=>{this.toggleChildren(sub)}}></span>
+                      onClick={(e)=>{this.toggleChildrenAsync(sub)}}></span>
                 <span className={"select_all_btn "+(sub.childrenChosen||"none")} onClick={(e)=>{this.toggleChildrenSelection(sub)}}></span>
                 <label className="name">
                     {sub.name}

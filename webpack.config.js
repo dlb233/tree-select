@@ -31,7 +31,8 @@ module.exports = {
                 exclude: /node_modules/,
                 loader: 'babel-loader',//在webpack的module部分的loaders里进行配置即可
                 query: {
-                    presets: ['react', 'es2015','stage-1']
+                    presets: ['react', 'es2015','stage-1'],
+                    plugins: ['transform-runtime']
                 }
             },
             {
@@ -54,6 +55,7 @@ module.exports = {
                 postcss:autoprefixer
             }
         })
+
     ],
     devServer: {
         contentBase: "./public",//本地服务器所加载的页面所在的目录

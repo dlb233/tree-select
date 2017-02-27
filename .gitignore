@@ -1,0 +1,8 @@
+#忽略node_modules目录
+node_modules
+
+#忽略bundle.js
+bundle.js
+
+#忽略.idea目录
+.idea
