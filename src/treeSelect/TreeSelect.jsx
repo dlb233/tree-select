@@ -65,9 +65,8 @@ class TreeSelect extends Component{
         })
     }
 
-
     /**
-     * 切换孩子显示状态/请求异步数据更新
+     * 切换孩子显示状态/请求异步数据更新,使用fetch
      * */
     async toggleChildrenAsync(node){
         //若设置了异步操作则异步获取数据
@@ -80,22 +79,6 @@ class TreeSelect extends Component{
         //展开或收起工作
         this.spreadChildren(node);
         this.forceUpdate();
-    }
-
-    /**
-     * 将异步操作转换为promise，由于项目未引入fetch，使用ajax
-     * */
-    getAsyncPromise=(asyncUrl,node)=>{
-        let promise = new Promise((resolve,reject)=>{
-            ajax.get(asyncUrl).query({parentId:node.id}).exchange((err, res) => {
-                if(err){
-                    reject(err);
-                }else{
-                    resolve(res);
-                }
-            });
-        });
-        return promise;
     }
 
     /**

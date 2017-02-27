@@ -5,4 +5,4 @@ node_modules
 bundle.js
 
 #忽略.idea目录
-.idea
+'.idea'
