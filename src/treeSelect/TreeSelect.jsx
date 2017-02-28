@@ -27,6 +27,8 @@ const confirmSelect = Symbol("confirmSelect"),
  * 可接受参数
  * @param data 初始数据，树形结构
  * @param asyncUrl 异步请求数据url
+ * @param className 结果显示框的className
+ * @param confirmFunc 确定后的回调函数，提供三个参数，依次为选中项id的集合，选中项名字的集合，选中项全部信息的集合
  * */
 class TreeSelect extends Component{
     constructor(props){
@@ -314,31 +316,36 @@ class TreeSelect extends Component{
     }
 
     /**
-     * 以当前选中的所有节点来更新selectIds和selectedNames列表
+     * 以当前选中的所有节点来更新selectIds、selectedNames和selectedItems列表
      * */
     [confirmSelect](){
         const {data} = this.state;
         let selectedIds = new Set([]),
+            selectedItems=[],
             selectedNames = new Set([]);
-        this.confirmRecursion(data,selectedIds,selectedNames,"");
+        this.confirmRecursion(data,selectedIds,selectedNames,selectedItems,"");
         this.setState({
             selectedIds,
             selectedNames
         });
+        if(typeof this.props.confirmFunc==="function"){
+            this.props.confirmFunc(selectedIds,selectedNames,selectedItems);
+        }
     }
 
     /**
-     * 递归更新selectedIds和selectedNames
+     * 递归更新selectedIds、selectedNames和selectedItems
      * */
-    confirmRecursion=(data,selectedIds,selectedNames,subName)=>{
+    confirmRecursion=(data,selectedIds,selectedNames,selectedItems,subName)=>{
         if(data && data.length>0){
             for(let item of data){
                 let newName = `${subName}${subName?">":""}${item.name}`;
                 if(item.isChosen){ //如果节点被选中，则不用再统计其子节点
                     selectedIds.add(item.id);
                     selectedNames.add(newName);
+                    selectedItems.push(item);
                 }else{
-                    this.confirmRecursion(item.children,selectedIds,selectedNames,newName);
+                    this.confirmRecursion(item.children,selectedIds,selectedNames,selectedItems,newName);
                 }
             }
         }
@@ -365,7 +372,7 @@ class TreeSelect extends Component{
     }
 
     render(){
-        let { isShow, inputValue = '',selectedNames } = this.state;
+        let { isShow, inputValue = '',selectedNames,className} = this.state;
         let popUpClass = isShow ? "area_choose caseDetail-area forSaveAs" : "hide";
         return(
             <div className="area_select">
@@ -388,7 +395,7 @@ class TreeSelect extends Component{
                         <span onClick={this.cancel}>取消</span>
                     </div>
                 </div>
-                <ShowSelectionBox toggleBox={this.toggleBox} isShow={isShow} selectedNames={selectedNames}/>
+                <ShowSelectionBox toggleBox={this.toggleBox} isShow={isShow} selectedNames={selectedNames} className={className}/>
             </div>
         )
     }
@@ -400,12 +407,13 @@ class ShowSelectionBox extends Component{
     }
 
     render(){
-        const {isShow,toggleBox,selectedNames} = this.props;
+        const {isShow,toggleBox,selectedNames,className} = this.props;
         return(
             <div>
                 <input type="text" id='inputTxt' title={[...selectedNames].join()}
                        value={[...selectedNames].join()}
                        data-id={""}
+                       className={className}
                        data-desc={""}
                        readOnly={true}
                        maxLength="80"
